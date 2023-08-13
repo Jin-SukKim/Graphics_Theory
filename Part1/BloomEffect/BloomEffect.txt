@@ -1,0 +1,98 @@
+Bloom Effect 
+
+간단하게 빤짝임 효과 같은 것
+
+1. 이미지 읽고 저장하기
+2. Convolution 이해
+3. Gaussian 필터 만들기 - 이미지를 부드럽게 만들어준다.
+    Bloom 효과를 만들때 중간 효과 만들기로 사용하기도 한다.
+4. Bloom 효과 만들기
+
+예전 그래픽스 라이브러리에서는 2d 이미지를 가져와서 pixel 값 하나하나를 대입해
+그려줬다면 최신 그래픽스 라이브러리에서는 사진을 그릴 때 조차 3차원에서
+사각형을 하나 그려준뒤 이미지를 그려준다.
+
+1d array를 2d array처럼 사용해 각 픽셀에 접근하는 방법
+
+1d array : std::vector<Vec4> pixels;
+for (int i = 0; i < image.width * image.height; i++)
+{
+    // 각 .픽셀읠 rgb 작업들
+    pixels[i].v[0]...
+    pixels[i].v[1]...
+    pixels[i].v[2]...
+}
+
+2d array 처럼 사용하기
+for (int i = 0; i < image.height; i++)
+{
+    for (int j = 0; j < image.width; j++)
+    {
+        // row- ans column-major order 방식을 사용해 2d 처럼 사용하는 것이다.
+        // 지금 방식은 row-major 방식이다.
+        // https://en.wikipedia.org/wiki/Row-_and_column-major_order
+        pixels[j + image.width * i].v[0]....
+        pixels[j + image.width * i].v[1]....
+        pixels[j + image.width * i].v[2]....
+    }
+}
+
+보통 색은 float 0.f ~ 1.f으로 표현해준다.
+0.f으로 갈수록 검은색에 가까워지고 1.f로 갈 수록 흰색에 가까워진다.
+그래서 각 픽셀 색에 1.f보다 큰 수를 곱해주면 밝아지고
+1.f보다 작은 수를 곱하면 어두워진다.
+
+나중에 Image Processing 등을 위해 값을 곱해줄 때 몇몇 색상의 값이
+0이라 아무리 곱해줘도 끝까지 변하지 않는 것을 피하기 위해 
+이미지를 불러온 뒤 각 픽셀의 색깔에 아주 작은 값을 더해줘
+추후 계산이 원할하도록 해준다.
+
+Separable Gaussian blur는 그래픽스 엔지니어 인터뷰 단골문제다.
+
+모든 2D filter를 1D 2개로 분리할 수 있는 것은 아니다.
+2D kernal을 1D kernel 두 개의 outer product로 표현할 수 있을 때만 가능하다.
+(more detail : https://en.wikipedia.org/wiki/Separable_filter,
+https://towardsdatascience.com/a-basic-introduction-to-separable-convolutions-b99ec3102728,
+https://www.analyticsvidhya.com/blog/2021/11/an-introduction-to-separable-convolutions/)
+
+
+2. 가우시안 블러
+
+더 쉬운 이해를 위해 일단 박스 블러에 대한 공부를 한다.
+
+Kernel(image processing)
+https://en.wikipedia.org/wiki/Kernel_(image_processing)
+
+Kernel은 Matrix의 값이다.
+적용된 kernel 값에 따라 이미지 필터를 해준다.
+
+가우시안 블러와 박스 블러의 차이는 가우시안 블러의 이미지가
+좀 더 선명하다는 점이다. (본래의 형태를 좀 더 유지한다)
+
+가우시안 블러에서는 kernel을 큰 것을 사용하면 이미지가 더 흐려진다.
+
+box blur의 kernel은 값의 평균을 내는 것이고
+가우시안 블러의 kernel은 값이 대칭을 이루고 있다.
+
+kernel을 이미지의 모든 픽셀에 적용하는 방법을 Convolution이라고 한다.
+https://en.wikipedia.org/wiki/Convolution
+
+박스 블러는 이웃 픽셀의 값들을 하나로 합쳐서 평균을 낸 값이
+convolution을 적용한 픽셀의 값이 된다.
+
+가우시안 블러는 박스 블러와 방식은 동일하나 weights(가중치)를 사용해
+계산해준다.
+
+3. 블룸 효과
+
+블룸 효과 적용 순서
+1. 블룸 효과는 이미지의 모든 픽셀에 대해 밝은 픽셀은 그냥 두고
+    어두운 픽셀은 까맣게 만든다.
+
+2. 가우시안 블러 효과를 적용해준다.
+
+3. 원본 이미지에 블러 효과까지 적용한 이미지를 더해주면 블룸 효과를 만들 수 있따.
+    원본 이미지와 블러 효과를 적용한 이미지를 더할 때는 픽셀의
+    색깔의 범위가 0.f ~ 1.f를 벗어나지 안도록 std::clamp() 함수를 사용해
+    정리해준다. (범위를 벗어나면 색을 다시 255를 곱해 이미지에서 사용하는
+    RGB로 변환해 줄 때 값이 이상해진다.)
