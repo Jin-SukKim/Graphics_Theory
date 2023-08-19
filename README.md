@@ -1,6 +1,6 @@
 "# Graphics_Theory" 
 
-그래픽스에 관련된 이론
+그래픽스에 관련된 이론 - Study from "honglab.co.kr"
 
 Part1 - Bloom Effect & RayTracing (그래픽스 기본 원리)
 
